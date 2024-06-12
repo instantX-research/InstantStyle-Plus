@@ -50,7 +50,7 @@ def model_type_to_class(model_type):
 def model_type_to_model_name(model_type):
     if model_type == Model_Type.SDXL:
         #return "stabilityai/stable-diffusion-xl-base-1.0"
-        return "/share2/wanghaofan/workspace/applications/newyear/checkpoints/base/sdxlUnstableDiffusers_v8HeavensWrathVAE"
+        return "./checkpoints/sdxlUnstableDiffusers_v8HeavensWrathVAE"
     elif model_type == Model_Type.SDXL_Turbo:
         return "stabilityai/sdxl-turbo"
     elif model_type == Model_Type.LCM_SDXL:

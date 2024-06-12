@@ -1194,9 +1194,8 @@ class StableDiffusionXLControlNetImg2ImgPipeline(
                 vis_image = image.detach().cpu().permute(0, 2, 3, 1).numpy() # (2, 1024, 1024, 3)
                 vis_image = (vis_image * 255).round().astype("uint8")
                 vis_image = Image.fromarray(vis_image[0])
-                vis_image.save("image.jpg")
+                #vis_image.save("image.jpg")
                 best_sim = sim
-            print(sim, best_sim)
             
             noise_pred = noise_pred_original - torch.sqrt(beta_prod_t) * grads
             
@@ -1206,7 +1205,6 @@ class StableDiffusionXLControlNetImg2ImgPipeline(
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
-        style_embeddings_clip: Optional[torch.Tensor] = None,
         prompt: Union[str, List[str]] = None,
         prompt_2: Optional[Union[str, List[str]]] = None,
         image: PipelineImageInput = None,
@@ -1250,6 +1248,8 @@ class StableDiffusionXLControlNetImg2ImgPipeline(
             Union[Callable[[int, int, Dict], None], PipelineCallback, MultiPipelineCallbacks]
         ] = None,
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
+        style_embeddings_clip: Optional[torch.Tensor] = None,
+        style_guidance_scale: float = 1000,
         **kwargs,
     ):
         r"""
@@ -1731,8 +1731,8 @@ class StableDiffusionXLControlNetImg2ImgPipeline(
                     noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
                 
                 # perform clip guidance
-                clip_guidance_scale = 1000
-                if clip_guidance_scale > 0:
+                # clip_guidance_scale = 1000
+                if style_guidance_scale > 0:
                     
                     noise_pred, latents, best_sim = self.cond_fn(
                         latents,
@@ -1744,7 +1744,7 @@ class StableDiffusionXLControlNetImg2ImgPipeline(
                         added_cond_kwargs,
                         noise_pred,
                         style_embeddings_clip,
-                        clip_guidance_scale,
+                        style_guidance_scale,
                         best_sim
                     )
                 
@@ -1805,7 +1805,8 @@ class StableDiffusionXLControlNetImg2ImgPipeline(
             else:
                 latents = latents / self.vae.config.scaling_factor
             
-            latents = latents.to(self.vae.dtype)
+            if style_guidance_scale > 0:
+                latents = latents.to(self.vae.dtype)
             image = self.vae.decode(latents, return_dict=False)[0]
 
             # cast back to fp16 if needed

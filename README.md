@@ -1,1 +1,1 @@
-# InstantStyle-V2
+# InstantStyle-Plus
