@@ -186,7 +186,7 @@ images = pipe_inference(
     controlnet_conditioning_scale=0.6, # high control cond decrease style
     denoising_start=0.0001,
     style_embeddings_clip=style_output, # style guidance embedding
-    style_guidance_scale=100, # enable style_guidance when style_guidance_scale > 0, cost high RAM, need optimization here
+    style_guidance_scale=0, # enable style_guidance when style_guidance_scale > 0, cost high RAM because VAE has to be in float32
 ).images
 
 # computer style similarity score
