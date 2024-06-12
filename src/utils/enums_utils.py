@@ -121,8 +121,9 @@ def is_sd(model_type):
     else:
         raise ValueError("Unknown model type")
     
-def _get_pipes(model_type, device):
-    model_name = model_type_to_model_name(model_type)
+def _get_pipes(model_type, device, model_name=None):
+    if model_name is None:
+        model_name = model_type_to_model_name(model_type)
     pipeline_inf, pipeline_inv = model_type_to_class(model_type)
 
     if is_float16(model_type):
@@ -144,10 +145,10 @@ def _get_pipes(model_type, device):
     
     return pipe_inversion, pipe_inference
     
-def get_pipes(model_type, scheduler_type, device="cuda"):
+def get_pipes(model_type, scheduler_type, device="cuda", model_name=None):
     scheduler_class = scheduler_type_to_class(scheduler_type)
 
-    pipe_inversion, pipe_inference = _get_pipes(model_type, device)
+    pipe_inversion, pipe_inference = _get_pipes(model_type, device, model_name)
     
     pipe_inference.scheduler = scheduler_class.from_config(pipe_inference.scheduler.config)
     pipe_inversion.scheduler = scheduler_class.from_config(pipe_inversion.scheduler.config)

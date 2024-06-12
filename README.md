@@ -125,7 +125,7 @@ pipe_inference.load_ip_adapter(
 ```
 model_type = Model_Type.SDXL
 scheduler_type = Scheduler_Type.DDIM
-pipe_inversion, pipe_inference = get_pipes(model_type, scheduler_type, device=device)
+pipe_inversion, pipe_inference = get_pipes(model_type, scheduler_type, device=device, model_name="stabilityai/stable-diffusion-xl-base-1.0")
 
 config = RunConfig(model_type = model_type,
                    num_inference_steps = 50,

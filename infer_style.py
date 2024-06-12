@@ -56,7 +56,7 @@ with torch.no_grad():
 # inversion
 model_type = Model_Type.SDXL
 scheduler_type = Scheduler_Type.DDIM
-pipe_inversion, pipe_inference = get_pipes(model_type, scheduler_type, device=device)
+pipe_inversion, pipe_inference = get_pipes(model_type, scheduler_type, device=device, model_name="./checkpoints/sdxlUnstableDiffusers_v8HeavensWrathVAE")
 
 config = RunConfig(model_type = model_type,
                    num_inference_steps = 50,
