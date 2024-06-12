@@ -15,7 +15,7 @@ InstantX Team
 
 </div>
 
-InstantStyle-Plus is the successor to InstantStyle and is designed to improve content preservation capabilities in style transfer. We decompose this task into three subparts: (1) Spatial Structure Content; (2) Semantic Content; (3) Style Content.
+InstantStyle-Plus is the successor to [InstantStyle](https://github.com/InstantStyle/InstantStyle) and is designed to improve content preservation capabilities in style transfer. We decompose this task into three subparts: (1) Spatial Structure Content; (2) Semantic Content; (3) Style Content.
 
 <div align="center">
 <img src='assets/teaser.png' width = 900 >
@@ -122,7 +122,7 @@ pipe_inference.load_ip_adapter(
 
 ### Step1: apply content inversion for spatial structure
 
-```
+```python
 model_type = Model_Type.SDXL
 scheduler_type = Scheduler_Type.DDIM
 pipe_inversion, pipe_inference = get_pipes(model_type, scheduler_type, device=device, model_name="stabilityai/stable-diffusion-xl-base-1.0")
@@ -151,7 +151,7 @@ torch.cuda.empty_cache()
 
 ### Step2: apply ControlNet for spatial structure
 
-```
+```python
 # condition image
 input_image_cv2 = cv2.imread(content_image_dir)
 input_image_cv2 = np.array(input_image_cv2)
@@ -163,7 +163,7 @@ anyline_image = Image.fromarray(input_image_cv2).resize((1024, 1024))
 
 ### Step3: apply IP-Adapter and InstantStyle for semantic content and style
 
-```
+```python
 scale_global = 0.3 # high semantic content decrease style effect
 scale_style = {
     "up": {"block_0": [0.0, 1.0, 0.0]},
@@ -173,7 +173,7 @@ pipe_inference.set_ip_adapter_scale([scale_global, scale_style])
 
 ### Step4: apply style guidance to preserve style
 
-```
+```python
 # infer
 images = pipe_inference(
     prompt=content_image_prompt, # prompt used for inversion
@@ -197,6 +197,10 @@ sim = (style_output@style_output1.T).detach().cpu().numpy().mean()
 print(sim)
 images[0].save(f"result_{sim}.jpg")
 ```
+
+## Resources
+- [InstantStyle](https://github.com/InstantStyle/InstantStyle)
+- [InstantID](https://github.com/InstantID/InstantID)
 
 ## Disclaimer
 Users are granted the freedom to create images using this tool, but they are obligated to comply with local laws and utilize it responsibly. The developers will not assume any responsibility for potential misuse by users.
