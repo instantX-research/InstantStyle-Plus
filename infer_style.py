@@ -25,7 +25,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # image dirs
 style_image_dir = "./data/style/103.jpg"
-style_image = Image.open(style_image_dir).resize((512, 512))
+style_image = Image.open(style_image_dir).convert("RGB").resize((512, 512))
 
 content_image_dir = "./data/content/11.jpg"
 content_image_prompt = "paris"
@@ -49,9 +49,14 @@ preprocess = transforms.Compose([
             ])
 
 # computer style embedding
-style_image = preprocess(Image.open(style_image_dir)).unsqueeze(0).to(device) # torch.Size([1, 3, 224, 224])
+style_image_ = preprocess(Image.open(style_image_dir).convert("RGB")).unsqueeze(0).to(device) # torch.Size([1, 3, 224, 224])
 with torch.no_grad():
-    _, content_output, style_output = clip_model(style_image)
+    _, __, style_output = clip_model(style_image_)
+
+# computer content embedding
+content_image_ = preprocess(Image.open(content_image_dir).convert("RGB")).unsqueeze(0).to(device) # torch.Size([1, 3, 224, 224])
+with torch.no_grad():
+    _, content_output, __ = clip_model(content_image_)
 
 # inversion
 model_type = Model_Type.SDXL
@@ -75,7 +80,7 @@ _, inv_latent, _, all_latents = invert(content_image,
                                        pipe_inference=pipe_inference,
                                        do_reconstruction=False) # torch.Size([1, 4, 128, 128])
 
-del pipe_inversion, pipe_inference, all_latents, content_output
+del pipe_inversion, pipe_inference, all_latents
 torch.cuda.empty_cache()
 
 # condition image
@@ -142,13 +147,17 @@ images = pipe_inference(
     controlnet_conditioning_scale=0.6, # high control cond decrease style
     denoising_start=0.0001,
     style_embeddings_clip=style_output, # style guidance embedding
-    style_guidance_scale=100, # enable style_guidance when style_guidance_scale > 0, cost high RAM, need optimization here
+    style_guidance_scale=0.0, # enable style_guidance when style_guidance_scale > 0, cost high VRAM
+    content_embeddings_clip=content_output, # content guidance embedding
+    content_guidance_scale=0.0, # enable content_guidance when content_guidance_scale > 0, cost high VRAM
 ).images
 
 # computer style similarity score
 generated_image = preprocess(images[0]).unsqueeze(0).to(device)
 _, content_output1, style_output1 = clip_model(generated_image)
 
-sim = (style_output@style_output1.T).detach().cpu().numpy().mean()
-print(sim)
-images[0].save(f"result_{sim}.jpg")
+style_sim = (style_output@style_output1.T).detach().cpu().numpy().mean()
+content_sim = (content_output@content_output1.T).detach().cpu().numpy().mean()
+
+print(style_sim, content_sim)
+images[0].save(f"result_{style_sim}_{content_sim}.jpg")
