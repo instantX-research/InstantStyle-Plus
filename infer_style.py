@@ -196,6 +196,7 @@ if __name__ == "__main__":
         guidance_scale=5, # high cfg increase style
         num_inference_steps=config.num_inference_steps, # config.num_inference_steps achieves the best
         image=inv_latent, # init content latent
+        #image=None, # init latent from noise
         control_image=cond_image, # ControlNet for spatial structure
         controlnet_conditioning_scale=0.25, # high control cond decrease style
         denoising_start=0.0001,

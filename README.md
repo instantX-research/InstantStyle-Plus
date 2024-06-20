@@ -1,7 +1,7 @@
 <div align="center">
 <h1>InstantStyle-Plus: Style Transfer with Content-Preserving in Text-to-Image Generation</h1>
 
-[**Haofan Wang**](https://haofanwang.github.io/)<sup>*</sup> · Renyuan Huang · Peng Xing · Hao Ai · Qixun Wang · Xu Bai
+[**Haofan Wang**](https://haofanwang.github.io/)<sup>*</sup> · Peng Xing · Hao Ai · Renyuan Huang · Qixun Wang · Xu Bai
 
 InstantX Team 
 

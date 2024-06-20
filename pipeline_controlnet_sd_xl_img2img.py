@@ -947,7 +947,30 @@ class StableDiffusionXLControlNetImg2ImgPipeline(
             return timesteps, num_inference_steps
 
         return timesteps, num_inference_steps - t_start
+    
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.prepare_latents
+    def prepare_latents_t2i(self, batch_size, num_channels_latents, height, width, dtype, device, generator, latents=None):
+        shape = (
+            batch_size,
+            num_channels_latents,
+            int(height) // self.vae_scale_factor,
+            int(width) // self.vae_scale_factor,
+        )
+        if isinstance(generator, list) and len(generator) != batch_size:
+            raise ValueError(
+                f"You have passed a list of generators of length {len(generator)}, but requested an effective batch"
+                f" size of {batch_size}. Make sure the batch size matches the length of the generators."
+            )
 
+        if latents is None:
+            latents = randn_tensor(shape, generator=generator, device=device, dtype=dtype)
+        else:
+            latents = latents.to(device)
+
+        # scale the initial noise by the standard deviation required by the scheduler
+        latents = latents * self.scheduler.init_noise_sigma
+        return latents
+    
     # Copied from diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl_img2img.StableDiffusionXLImg2ImgPipeline.prepare_latents
     def prepare_latents(
         self, image, timestep, batch_size, num_images_per_prompt, dtype, device, generator=None, add_noise=True
@@ -1549,7 +1572,8 @@ class StableDiffusionXLControlNetImg2ImgPipeline(
             )
 
         # 4. Prepare image and controlnet_conditioning_image
-        image = self.image_processor.preprocess(image, height=height, width=width).to(dtype=torch.float32)
+        if image is not None:
+            image = self.image_processor.preprocess(image, height=height, width=width).to(dtype=torch.float32)
 
         if isinstance(controlnet, ControlNetModel):
             control_image = self.prepare_control_image(
@@ -1604,6 +1628,18 @@ class StableDiffusionXLControlNetImg2ImgPipeline(
         
         add_noise = True if self.denoising_start is None else False
         
+        if image is None:
+            num_channels_latents = self.unet.config.in_channels
+            latents = self.prepare_latents_t2i(
+                batch_size,
+                num_channels_latents,
+                height, 
+                width,
+                prompt_embeds.dtype,
+                device,
+                generator
+            )
+                    
         # 6. Prepare latent variables
         if latents is None:
             latents = self.prepare_latents(
