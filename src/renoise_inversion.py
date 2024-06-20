@@ -146,7 +146,11 @@ def inversion_step(
                     nosie_pred_avg = j * nosie_pred_avg / (j + 1) + noise_pred / (j + 1)
 
         if i >= avg_range[0] or (not pipe.cfg.average_latent_estimations and i > 0):
-            noise_pred = noise_regularization(noise_pred, noise_pred_optimal, lambda_kl=pipe.cfg.noise_regularization_lambda_kl, lambda_ac=pipe.cfg.noise_regularization_lambda_ac, num_reg_steps=pipe.cfg.noise_regularization_num_reg_steps, num_ac_rolls=pipe.cfg.noise_regularization_num_ac_rolls, generator=generator)
+            noise_pred_ = noise_regularization(noise_pred, noise_pred_optimal, lambda_kl=pipe.cfg.noise_regularization_lambda_kl, lambda_ac=pipe.cfg.noise_regularization_lambda_ac, num_reg_steps=pipe.cfg.noise_regularization_num_reg_steps, num_ac_rolls=pipe.cfg.noise_regularization_num_ac_rolls, generator=generator)
+            
+            has_nan = torch.isnan(noise_pred_).any().item()
+            if not has_nan:
+                noise_pred = noise_pred_
         
         approximated_z_tp1 = pipe.scheduler.inv_step(noise_pred, t, z_t, **extra_step_kwargs, return_dict=False)[0].detach()
 
