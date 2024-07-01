@@ -1,5 +1,6 @@
 # Copyright 2024 InstantX Team. All rights reserved.
 
+import os
 import cv2
 import numpy as np
 from PIL import Image
@@ -8,6 +9,7 @@ import diffusers
 from diffusers.utils import load_image
 from diffusers import DDIMScheduler, ControlNetModel
 from transformers import CLIPVisionModelWithProjection
+from transformers import AutoProcessor, Blip2ForConditionalGeneration
 
 import torch
 import torchvision
@@ -21,6 +23,38 @@ from inversion import run as invert
 from CSD_Score.model import CSD_CLIP, convert_state_dict
 from pipeline_controlnet_sd_xl_img2img import StableDiffusionXLControlNetImg2ImgPipeline
 
+
+def generate_caption(
+    image: Image.Image,
+    text: str = None,
+    decoding_method: str = "Nucleus sampling",
+    temperature: float = 1.0,
+    length_penalty: float = 1.0,
+    repetition_penalty: float = 1.5,
+    max_length: int = 50,
+    min_length: int = 1,
+    num_beams: int = 5,
+    top_p: float = 0.9,
+) -> str:
+    
+    if text is not None:
+        inputs = processor(images=image, text=text, return_tensors="pt").to("cuda", torch.float16)
+        generated_ids = model.generate(**inputs)
+    else:
+        inputs = processor(images=image, return_tensors="pt").to("cuda", torch.float16)
+        generated_ids = model.generate(
+            pixel_values=inputs.pixel_values,
+            do_sample=decoding_method == "Nucleus sampling",
+            temperature=temperature,
+            length_penalty=length_penalty,
+            repetition_penalty=repetition_penalty,
+            max_length=max_length,
+            min_length=min_length,
+            num_beams=num_beams,
+            top_p=top_p,
+        )
+    result = processor.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
+    return result
 
 def resize_img(input_image, max_side=1280, min_side=1024, size=None, 
                pad_to_max_side=False, mode=Image.BILINEAR, base_pixel_number=64):
@@ -48,20 +82,30 @@ def resize_img(input_image, max_side=1280, min_side=1024, size=None,
 
 if __name__ == "__main__":
 
+    if not os.path.exists("results"):
+        os.makedirs("results")
+
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    
+    # blip2
+    MODEL_ID = "Salesforce/blip2-flan-t5-xl"
+    processor = AutoProcessor.from_pretrained(MODEL_ID)
+    model = Blip2ForConditionalGeneration.from_pretrained(MODEL_ID, device_map="cuda", load_in_8bit=False, torch_dtype=torch.float16)
+    model.eval()
 
     # image dirs
-    style_image_dir = "./data/style/103.jpg"
-    style_image = Image.open(style_image_dir).convert("RGB").resize((512, 512))
+    style_image_dir = "./data/style/93.jpg"
+    style_image = Image.open(style_image_dir).convert("RGB")
 
     content_image_dir = "./data/content/20.jpg"
-    content_image_prompt = "a river"
     content_image = Image.open(content_image_dir).convert("RGB")
     content_image = resize_img(content_image)
+    content_image_prompt = generate_caption(content_image)
+    print(content_image_prompt)
 
     # init style clip model
-    clip_model = CSD_CLIP("vit_large", "default", model_path="CSD_Score/models/ViT-L-14.pt")
-    model_path = "CSD_Score/models/checkpoint.pth"
+    clip_model = CSD_CLIP("vit_large", "default", model_path="./CSD_Score/models/ViT-L-14.pt")
+    model_path = "./CSD_Score/models/checkpoint.pth"
     checkpoint = torch.load(model_path, map_location="cpu")
     state_dict = convert_state_dict(checkpoint['model_state_dict'])
     clip_model.load_state_dict(state_dict, strict=False)
@@ -89,7 +133,7 @@ if __name__ == "__main__":
     # inversion
     model_type = Model_Type.SDXL
     scheduler_type = Scheduler_Type.DDIM
-    pipe_inversion, pipe_inference = get_pipes(model_type, scheduler_type, device=device, model_name="checkpoints/sdxlUnstableDiffusers_v8HeavensWrathVAE")
+    pipe_inversion, pipe_inference = get_pipes(model_type, scheduler_type, device=device, model_name="./checkpoints/sdxlUnstableDiffusers_v8HeavensWrathVAE")
 
     config = RunConfig(model_type = model_type,
                        num_inference_steps = 50,
@@ -119,15 +163,13 @@ if __name__ == "__main__":
     del pipe_inversion, pipe_inference, all_latents
     torch.cuda.empty_cache()
     
-    
     control_type = "tile"
-    
     if control_type == "tile":
         # condition image
         cond_image = load_image(content_image_dir)
         cond_image = resize_img(cond_image)
         
-        controlnet_path = "TTPlanet/TTPLanet_SDXL_Controlnet_Tile_Realistic"
+        controlnet_path = "./controlnet-tile-sdxl-1.0"
         controlnet = ControlNetModel.from_pretrained(
             controlnet_path,
             torch_dtype=torch.float16,
@@ -145,7 +187,7 @@ if __name__ == "__main__":
         cond_image = resize_img(anyline_image)
 
         # load ControlNet
-        controlnet_path = "checkpoints/MistoLine"
+        controlnet_path = "./checkpoints/MistoLine"
         controlnet = ControlNetModel.from_pretrained(
             controlnet_path,
             torch_dtype=torch.float16,
@@ -154,11 +196,11 @@ if __name__ == "__main__":
 
     # load pipeline
     image_encoder = CLIPVisionModelWithProjection.from_pretrained(
-        "checkpoints/IP-Adapter", subfolder="models/image_encoder", torch_dtype=torch.float16
+        "./checkpoints/IP-Adapter", subfolder="models/image_encoder", torch_dtype=torch.float16
     ).to(device)
 
     pipe_inference = StableDiffusionXLControlNetImg2ImgPipeline.from_pretrained(
-                    "checkpoints/sdxlUnstableDiffusers_v8HeavensWrathVAE",
+                    "./checkpoints/sdxlUnstableDiffusers_v8HeavensWrathVAE",
                     controlnet=controlnet,
                     clip_model=clip_model,
                     image_encoder=image_encoder,
@@ -171,8 +213,8 @@ if __name__ == "__main__":
 
     # load multiple IPA
     pipe_inference.load_ip_adapter(
-        ["checkpoints/IP-Adapter", 
-         "checkpoints/IP-Adapter", 
+        ["./checkpoints/IP-Adapter", 
+         "./checkpoints/IP-Adapter", 
         ],
         subfolder=["sdxl_models", "sdxl_models"],
         weight_name=[
@@ -182,9 +224,9 @@ if __name__ == "__main__":
         image_encoder_folder=None,
     )
 
-    scale_global = 0.2 # high semantic content decrease style effect
+    scale_global = 0.2 # high semantic content decrease style effect, lower it can benefit from textual or material style
     scale_style = {
-        "up": {"block_0": [0.0, 1.0, 0.0]},
+        "up": {"block_0": [0.0, 1.2, 0.0]},
     }
     pipe_inference.set_ip_adapter_scale([scale_global, scale_style])
 
@@ -198,7 +240,7 @@ if __name__ == "__main__":
         image=inv_latent, # init content latent
         #image=None, # init latent from noise
         control_image=cond_image, # ControlNet for spatial structure
-        controlnet_conditioning_scale=0.25, # high control cond decrease style
+        controlnet_conditioning_scale=0.4, # high control cond decrease style
         denoising_start=0.0001,
         style_embeddings_clip=style_output, # style guidance embedding
         content_embeddings_clip=content_output, # content guidance embedding
