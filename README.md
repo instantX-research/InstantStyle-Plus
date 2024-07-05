@@ -61,6 +61,13 @@ If you find InstantStyle-Plus useful for your research and applications, please 
 
 ```bibtex
 @article{wang2024instantstyle,
+  title={InstantStyle-Plus: Style Transfer with Content-Preserving in Text-to-Image Generation},
+  author={Wang, Haofan and Xing, Peng and Huang, Renyuan and Ai, Hao and Wang, Qixun and Bai, Xu},
+  journal={arXiv preprint arXiv:2407.00788},
+  year={2024}
+}
+
+@article{wang2024instantstyle,
   title={Instantstyle: Free lunch towards style-preserving in text-to-image generation},
   author={Wang, Haofan and Wang, Qixun and Bai, Xu and Qin, Zekui and Chen, Anthony},
   journal={arXiv preprint arXiv:2404.02733},
