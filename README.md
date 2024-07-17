@@ -8,10 +8,8 @@ InstantX Team
 <sup>*</sup>corresponding authors
 
 <a href='https://instantstyle-plus.github.io/'><img src='https://img.shields.io/badge/Project-Page-green'></a>
-<a href='https://arxiv.org/abs/2404.02733'><img src='https://img.shields.io/badge/Technique-Report-red'></a>
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Space-red)](https://huggingface.co/spaces/InstantX/InstantStyle)
-[![ModelScope](https://img.shields.io/badge/ModelScope-Studios-blue)](https://modelscope.cn/studios/instantx/InstantStyle/summary)
-[![GitHub](https://img.shields.io/github/stars/InstantStyle/InstantStyle?style=social)](https://github.com/InstantStyle/InstantStyle)
+<a href='[https://arxiv.org/abs/2404.02733](https://arxiv.org/abs/2407.00788)'><img src='https://img.shields.io/badge/Technique-Report-red'></a>
+[![GitHub](https://img.shields.io/github/stars/InstantStyle/InstantStyle?style=social)](https://github.com/instantX-research/InstantStyle-Plus)
 
 </div>
 
